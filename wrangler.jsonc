@@ -1,6 +1,6 @@
 {
 	"name": "baymax-ai",
-	"main": "src/main.ts",
+	"main": "src/main.tsx",
 	"compatibility_date": "2025-09-29",
 	"assets": {
 		"directory": "./dist"
