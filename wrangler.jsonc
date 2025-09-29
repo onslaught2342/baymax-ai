@@ -1,5 +1,5 @@
 {
-	"name": "baymax-ai",
+	"name": "baymax",
 	"main": "src/main.tsx",
 	"compatibility_date": "2025-09-29",
 	"assets": {
