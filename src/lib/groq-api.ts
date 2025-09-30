@@ -8,11 +8,12 @@ interface WorkerResponse {
 	}>;
 	[key: string]: unknown;
 }
+
 let sessionId: string | null = null;
 
 function getSessionId(): string {
 	if (!sessionId) {
-		// Use crypto API for a random UUID
+		// Generate stable random ID per session
 		sessionId = crypto.randomUUID();
 	}
 	return sessionId;
