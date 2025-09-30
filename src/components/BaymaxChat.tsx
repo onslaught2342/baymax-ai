@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sendMessageToGroq } from "@/lib/groq-api";
+import { sendMessageToBaymax } from "@/lib/groq-api";
 
 interface Message {
 	id: string;
@@ -45,7 +45,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 		await new Promise((resolve) =>
 			setTimeout(resolve, 1000 + Math.random() * 2000)
 		);
-		return sendMessageToGroq(message);
+		return sendMessageToBaymax(message);
 	};
 
 	const sendMessage = async () => {

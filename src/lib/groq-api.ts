@@ -1,39 +1,30 @@
-// Groq API integration for Baymax chatbot
-// Note: This should be moved to a server-side API route for production
+// Baymax proxy integration (calls your Cloudflare Worker instead of Groq directly)
 
-interface GroqResponse {
-	choices: Array<{
-		message: {
-			content: string;
+interface WorkerResponse {
+	choices?: Array<{
+		message?: {
+			content?: string;
 		};
 	}>;
+	[key: string]: unknown;
 }
 
-export async function sendMessageToGroq(message: string): Promise<string> {
+export async function sendMessageToBaymax(message: string): Promise<string> {
 	try {
-		// Note: In a real application, this API call should be made from a server-side route
-		// to keep the API key secure. This is a client-side example for development.
-
 		const response = await fetch(
-			"https://api.groq.com/openai/v1/chat/completions",
+			"https://baymax-proxy.onslaught2342.workers.dev",
 			{
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${process.env.GROQ_API_KEY}`, // This won't work client-side
-				},
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					model: "llama-3.1-8b-instant", // Using Mixtral model instead of the one in your example
+					model: "llama-3.1-8b-instant",
 					messages: [
 						{
 							role: "system",
 							content:
 								"You are Baymax, a personal healthcare companion from Big Hero 6. You are caring, gentle, and focused on helping with health and wellness. Always maintain a warm, helpful, and slightly formal tone like the character.",
 						},
-						{
-							role: "user",
-							content: message,
-						},
+						{ role: "user", content: message },
 					],
 					max_tokens: 1000,
 					temperature: 0.7,
@@ -45,13 +36,15 @@ export async function sendMessageToGroq(message: string): Promise<string> {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 
-		const data: GroqResponse = await response.json();
+		const data: WorkerResponse = await response.json();
+
+		// Try to extract message content like Groq would return
 		return (
-			data.choices[0]?.message?.content ||
+			data.choices?.[0]?.message?.content ||
 			"I'm here to help you. Could you please rephrase your question?"
 		);
 	} catch (error) {
-		console.error("Error calling Groq API:", error);
+		console.error("Error calling Baymax proxy:", error);
 		throw new Error("Failed to get response from Baymax");
 	}
 }
@@ -60,7 +53,6 @@ export async function sendMessageToGroq(message: string): Promise<string> {
 export function getMockBaymaxResponse(message: string): string {
 	const lowerMessage = message.toLowerCase();
 
-	// Health-related responses
 	if (
 		lowerMessage.includes("pain") ||
 		lowerMessage.includes("hurt") ||
@@ -113,7 +105,6 @@ export function getMockBaymaxResponse(message: string): string {
 		return "You are very welcome! It is my pleasure to help you maintain good health and wellbeing. Is there anything else I can assist you with today?";
 	}
 
-	// General Baymax responses
 	const generalResponses = [
 		"I am programmed to assist with your healthcare needs. Please tell me more about your concern so I can provide appropriate guidance.",
 		"Your health and wellbeing are my primary concern. I am here to help you make informed decisions about your health.",
