@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, User } from "lucide-react";
+import { Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sendMessageToBaymax } from "@/lib/groq-api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
 	id: string;
@@ -110,11 +112,14 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 				<div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary-glow/5" />
 				<div className="relative flex items-center gap-3">
 					<div className="relative">
-						<div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center animate-pulse-glow">
-							<Bot className="w-6 h-6 text-primary animate-gentle-bounce" />
-						</div>
+						<img
+							src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png" // 👈 your Baymax profile pic
+							alt="Baymax"
+							className="w-12 h-12 rounded-full object-cover animate-pulse-glow"
+						/>
 						<div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card animate-gentle-bounce" />
 					</div>
+
 					<div>
 						<h2 className="text-xl font-semibold text-foreground">Baymax</h2>
 						<p className="text-sm text-muted-foreground">
@@ -136,9 +141,12 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 						style={{ animationDelay: `${index * 0.1}s` }}
 					>
 						{message.sender === "bot" && (
-							<div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-1 animate-float">
-								<Bot className="w-4 h-4 text-primary" />
-							</div>
+							<img
+								src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png" // 👈 put your bot pic here
+								alt="Baymax"
+								className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-float"
+								loading="lazy"
+							/>
 						)}
 
 						<div
@@ -150,9 +158,12 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 									: "bg-chat-bot/80 text-chat-bot-foreground border border-border/30 rounded-bl-md"
 							)}
 						>
-							<p className="text-sm leading-relaxed whitespace-pre-wrap">
-								{message.content}
-							</p>
+							<div className="prose prose-sm max-w-none text-sm leading-relaxed text-white">
+								<ReactMarkdown remarkPlugins={[remarkGfm]}>
+									{message.content}
+								</ReactMarkdown>
+							</div>
+
 							<p
 								className={cn(
 									"text-xs mt-3 opacity-60 font-medium",
@@ -169,12 +180,12 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 						</div>
 
 						{message.sender === "user" && (
-							<div
-								className="w-8 h-8 rounded-full bg-secondary/80 flex items-center justify-center flex-shrink-0 mt-1 animate-float"
-								style={{ animationDelay: "1s" }}
-							>
-								<User className="w-4 h-4 text-secondary-foreground" />
-							</div>
+							<img
+								src="https://cdn.onslaught2342.qzz.io/assets/Images/logo.png" // 👈 put your user profile pic here
+								alt="User"
+								className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-float"
+								loading="lazy"
+							/>
 						)}
 					</div>
 				))}
@@ -183,7 +194,12 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 				{isLoading && (
 					<div className="flex gap-3 animate-message-in">
 						<div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-1 animate-pulse-glow">
-							<Bot className="w-4 h-4 text-primary" />
+							<img
+								src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png"
+								alt="Baymax"
+								className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-pulse-glow"
+								loading="lazy"
+							/>
 						</div>
 						<div className="bg-chat-bot/80 border border-border/30 rounded-2xl rounded-bl-md px-5 py-4 shadow-message backdrop-blur-sm">
 							<div className="flex gap-1.5">
