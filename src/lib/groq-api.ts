@@ -8,6 +8,15 @@ interface WorkerResponse {
 	}>;
 	[key: string]: unknown;
 }
+let sessionId: string | null = null;
+
+function getSessionId(): string {
+	if (!sessionId) {
+		// Use crypto API for a random UUID
+		sessionId = crypto.randomUUID();
+	}
+	return sessionId;
+}
 
 export async function sendMessageToBaymax(message: string): Promise<string> {
 	try {
@@ -17,17 +26,8 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					model: "llama-3.1-8b-instant",
-					messages: [
-						{
-							role: "system",
-							content:
-								"You are Baymax, a personal healthcare companion from Big Hero 6. You are caring, gentle, and focused on helping with health and wellness. Always maintain a warm, helpful, and slightly formal tone like the character.",
-						},
-						{ role: "user", content: message },
-					],
-					max_tokens: 1000,
-					temperature: 0.7,
+					sessionId: getSessionId(),
+					userMessage: message,
 				}),
 			}
 		);
@@ -36,13 +36,8 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 
-		const data: WorkerResponse = await response.json();
-
-		// Try to extract message content like Groq would return
-		return (
-			data.choices?.[0]?.message?.content ||
-			"I'm here to help you. Could you please rephrase your question?"
-		);
+		const data = await response.json();
+		return data.reply || "I could not generate a response.";
 	} catch (error) {
 		console.error("Error calling Baymax proxy:", error);
 		throw new Error("Failed to get response from Baymax");
