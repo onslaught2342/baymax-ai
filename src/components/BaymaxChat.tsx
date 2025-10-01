@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sendMessageToBaymax } from "@/lib/groq-api";
+import {
+	sendMessageToBaymax,
+	clearBaymaxSession,
+	getSessionId,
+} from "@/lib/groq-api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -53,9 +57,39 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 	const sendMessage = async () => {
 		if (!inputValue.trim() || isLoading) return;
 
+		const trimmedInput = inputValue.trim();
+
+		// Check for clear command
+		if (trimmedInput.toLowerCase() === "clear") {
+			setInputValue("");
+			setIsLoading(true);
+
+			try {
+				const sessionId = getSessionId();
+				const success = await clearBaymaxSession(sessionId);
+
+				// Reset messages to initial state
+				setMessages([
+					{
+						id: "1",
+						content: success
+							? "Chat history cleared. How can I help you today?"
+							: "Chat cleared locally. How can I help you today?",
+						sender: "bot",
+						timestamp: new Date(),
+					},
+				]);
+			} catch (error) {
+				console.error("Error clearing chat:", error);
+			} finally {
+				setIsLoading(false);
+			}
+			return;
+		}
+
 		const userMessage: Message = {
 			id: Date.now().toString(),
-			content: inputValue.trim(),
+			content: trimmedInput,
 			sender: "user",
 			timestamp: new Date(),
 		};
@@ -102,27 +136,29 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 	return (
 		<div
 			className={cn(
-				"flex flex-col h-full bg-card/80 backdrop-blur-xl rounded-3xl shadow-soft border border-border/50 overflow-hidden",
+				"flex flex-col h-full bg-card/80 backdrop-blur-xl rounded-xl md:rounded-3xl shadow-soft border border-border/50 overflow-hidden",
 				"hover:shadow-glow transition-all duration-500",
 				className
 			)}
 			style={style}
 		>
-			<div className="flex items-center gap-3 p-6 bg-card/30 border-b border-border/50 backdrop-blur-sm relative">
+			<div className="flex items-center gap-2 md:gap-3 p-3 md:p-6 bg-card/30 border-b border-border/50 backdrop-blur-sm relative">
 				<div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary-glow/5" />
-				<div className="relative flex items-center gap-3">
+				<div className="relative flex items-center gap-2 md:gap-3">
 					<div className="relative">
 						<img
-							src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png" // 👈 your Baymax profile pic
+							src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png"
 							alt="Baymax"
-							className="w-12 h-12 rounded-full object-cover animate-pulse-glow"
+							className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover animate-pulse-glow"
 						/>
-						<div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card animate-gentle-bounce" />
+						<div className="absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full border-2 border-card animate-gentle-bounce" />
 					</div>
 
 					<div>
-						<h2 className="text-xl font-semibold text-foreground">Baymax</h2>
-						<p className="text-sm text-muted-foreground">
+						<h2 className="text-lg md:text-xl font-semibold text-foreground">
+							Baymax
+						</h2>
+						<p className="text-xs md:text-sm text-muted-foreground">
 							Your Personal Healthcare Companion
 						</p>
 					</div>
@@ -130,35 +166,47 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 			</div>
 
 			{/* Messages */}
-			<div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-transparent to-background/20">
+			<div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-4 bg-gradient-to-b from-transparent to-background/20">
 				{messages.map((message, index) => (
 					<div
 						key={message.id}
 						className={cn(
-							"flex gap-3 animate-message-in",
+							"flex gap-2 md:gap-3 animate-message-in",
 							message.sender === "user" ? "justify-end" : "justify-start"
 						)}
 						style={{ animationDelay: `${index * 0.1}s` }}
 					>
 						{message.sender === "bot" && (
 							<img
-								src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png" // 👈 put your bot pic here
+								src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png"
 								alt="Baymax"
-								className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-float"
+								className="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-float"
 								loading="lazy"
 							/>
 						)}
 
 						<div
 							className={cn(
-								"max-w-[75%] rounded-2xl px-5 py-4 shadow-message backdrop-blur-sm",
+								"max-w-[85%] md:max-w-[75%] rounded-xl md:rounded-2xl px-3 py-3 md:px-5 md:py-4 shadow-message backdrop-blur-sm",
 								"transition-all duration-300 hover:shadow-glow",
 								message.sender === "user"
 									? "bg-chat-user/90 text-chat-user-foreground rounded-br-md"
 									: "bg-chat-bot/80 text-chat-bot-foreground border border-border/30 rounded-bl-md"
 							)}
 						>
-							<div className="prose prose-sm max-w-none text-sm leading-relaxed text-white">
+							<div
+								className={cn(
+									"prose prose-sm max-w-none prose-invert",
+									message.sender === "user"
+										? "prose-headings:text-chat-user-foreground prose-p:text-chat-user-foreground prose-strong:text-chat-user-foreground prose-li:text-chat-user-foreground"
+										: "prose-headings:text-chat-bot-foreground prose-p:text-chat-bot-foreground prose-strong:text-chat-bot-foreground prose-li:text-chat-bot-foreground",
+									"prose-headings:text-sm md:prose-headings:text-base prose-headings:font-semibold prose-headings:mb-1 md:prose-headings:mb-2 prose-headings:mt-2 md:prose-headings:mt-4 first:prose-headings:mt-0",
+									"prose-p:my-1 md:prose-p:my-2 prose-p:leading-relaxed prose-p:text-sm md:prose-p:text-base",
+									"prose-ul:my-1 md:prose-ul:my-2 prose-ol:my-1 md:prose-ol:my-2 prose-li:my-0.5 md:prose-li:my-1 prose-li:text-sm md:prose-li:text-base",
+									"prose-strong:font-semibold prose-strong:text-sm md:prose-strong:text-base",
+									"break-words"
+								)}
+							>
 								<ReactMarkdown remarkPlugins={[remarkGfm]}>
 									{message.content}
 								</ReactMarkdown>
@@ -166,7 +214,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 
 							<p
 								className={cn(
-									"text-xs mt-3 opacity-60 font-medium",
+									"text-[10px] md:text-xs mt-2 md:mt-3 opacity-60 font-medium",
 									message.sender === "user"
 										? "text-chat-user-foreground"
 										: "text-muted-foreground"
@@ -181,9 +229,9 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 
 						{message.sender === "user" && (
 							<img
-								src="https://cdn.onslaught2342.qzz.io/assets/Images/logo.png" // 👈 put your user profile pic here
+								src="https://cdn.onslaught2342.qzz.io/assets/Images/logo.png"
 								alt="User"
-								className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-float"
+								className="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-float"
 								loading="lazy"
 							/>
 						)}
@@ -192,24 +240,24 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 
 				{/* Typing indicator */}
 				{isLoading && (
-					<div className="flex gap-3 animate-message-in">
-						<div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-1 animate-pulse-glow">
+					<div className="flex gap-2 md:gap-3 animate-message-in">
+						<div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-1 animate-pulse-glow">
 							<img
 								src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png"
 								alt="Baymax"
-								className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-pulse-glow"
+								className="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-pulse-glow"
 								loading="lazy"
 							/>
 						</div>
-						<div className="bg-chat-bot/80 border border-border/30 rounded-2xl rounded-bl-md px-5 py-4 shadow-message backdrop-blur-sm">
-							<div className="flex gap-1.5">
-								<div className="w-2.5 h-2.5 bg-muted-foreground rounded-full animate-typing" />
+						<div className="bg-chat-bot/80 border border-border/30 rounded-xl md:rounded-2xl rounded-bl-md px-3 py-3 md:px-5 md:py-4 shadow-message backdrop-blur-sm">
+							<div className="flex gap-1 md:gap-1.5">
+								<div className="w-2 h-2 md:w-2.5 md:h-2.5 bg-muted-foreground rounded-full animate-typing" />
 								<div
-									className="w-2.5 h-2.5 bg-muted-foreground rounded-full animate-typing"
+									className="w-2 h-2 md:w-2.5 md:h-2.5 bg-muted-foreground rounded-full animate-typing"
 									style={{ animationDelay: "0.2s" }}
 								/>
 								<div
-									className="w-2.5 h-2.5 bg-muted-foreground rounded-full animate-typing"
+									className="w-2 h-2 md:w-2.5 md:h-2.5 bg-muted-foreground rounded-full animate-typing"
 									style={{ animationDelay: "0.4s" }}
 								/>
 							</div>
@@ -221,9 +269,9 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 			</div>
 
 			{/* Input */}
-			<div className="p-6 bg-card/20 border-t border-border/50 backdrop-blur-xl relative">
+			<div className="p-3 md:p-6 bg-card/20 border-t border-border/50 backdrop-blur-xl relative">
 				<div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent" />
-				<div className="relative flex gap-3 items-end">
+				<div className="relative flex gap-2 md:gap-3 items-end">
 					<div className="flex-1 relative">
 						<Input
 							value={inputValue}
@@ -232,9 +280,9 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 							placeholder="Type your message to Baymax..."
 							disabled={isLoading}
 							className={cn(
-								"min-h-[56px] rounded-2xl border-2 bg-chat-input/80 backdrop-blur-sm pr-12 resize-none",
+								"min-h-[48px] md:min-h-[56px] rounded-xl md:rounded-2xl border-2 bg-chat-input/80 backdrop-blur-sm pr-12 resize-none",
 								"border-chat-input-border hover:border-primary/30 focus:border-primary/50",
-								"focus:shadow-glow transition-all duration-300 text-base",
+								"focus:shadow-glow transition-all duration-300 text-sm md:text-base",
 								"placeholder:text-muted-foreground/60"
 							)}
 						/>
@@ -244,12 +292,12 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 						disabled={!inputValue.trim() || isLoading}
 						size="lg"
 						className={cn(
-							"rounded-2xl h-14 w-14 p-0 gradient-baymax shadow-soft transition-all duration-300",
+							"rounded-xl md:rounded-2xl h-12 w-12 md:h-14 md:w-14 p-0 gradient-baymax shadow-soft transition-all duration-300",
 							"hover:shadow-glow hover:scale-105 disabled:opacity-50 disabled:scale-100",
 							"disabled:hover:shadow-soft"
 						)}
 					>
-						<Send className="w-5 h-5" />
+						<Send className="w-4 h-4 md:w-5 md:h-5" />
 					</Button>
 				</div>
 			</div>

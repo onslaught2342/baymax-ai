@@ -29,7 +29,7 @@ function generateUUIDFallback(): string {
 		16
 	)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
-function getSessionId(): string {
+export function getSessionId(): string {
 	try {
 		const key = "baymax_session_id";
 		let id = sessionStorage.getItem(key);
@@ -135,4 +135,30 @@ export function getMockBaymaxResponse(message: string): string {
 		"On a scale of 1–10, how severe is this for you right now?",
 	];
 	return general[Math.floor(Math.random() * general.length)];
+}
+
+export async function clearBaymaxSession(sessionId: string): Promise<boolean> {
+	try {
+		const res = await fetch(
+			"https://baymax-proxy.onslaught2342.workers.dev/clear",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ sessionId }),
+			}
+		);
+
+		if (!res.ok) {
+			console.error("Failed to clear session:", res.status);
+			return false;
+		}
+
+		const data = await res.json();
+		return data.success === true;
+	} catch (err) {
+		console.error("Clear session error:", err);
+		return false;
+	}
 }

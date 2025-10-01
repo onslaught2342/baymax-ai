@@ -13,23 +13,23 @@ const Index = () => {
 				<ThemeToggle />
 			</div>
 
-			<div className="relative z-10 p-4 md:p-8 min-h-screen flex flex-col bg-background/80 backdrop-blur-sm">
-				<div className="max-w-4xl mx-auto flex-1 flex flex-col">
-					<div className="text-center mb-8 animate-message-in">
-						<div className="inline-flex items-center gap-3 mb-6">
-							<div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse-glow">
-								<div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-									<div className="w-6 h-6 rounded-full bg-primary" />
+			<div className="relative z-10 p-3 md:p-4 lg:p-8 min-h-screen flex flex-col bg-background/80 backdrop-blur-sm">
+				<div className="max-w-4xl mx-auto flex-1 flex flex-col w-full">
+					<div className="text-center mb-4 md:mb-8 animate-message-in">
+						<div className="inline-flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+							<div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse-glow">
+								<div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/20 flex items-center justify-center">
+									<div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-primary" />
 								</div>
 							</div>
 						</div>
-						<h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4 tracking-tight">
+						<h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-foreground mb-3 md:mb-4 tracking-tight px-4">
 							Meet{" "}
 							<span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
 								Baymax
 							</span>
 						</h1>
-						<p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+						<p className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
 							Your personal healthcare companion powered by advanced AI.
 							<br className="hidden md:block" />
 							Caring, gentle, and always ready to help with your wellness needs.
@@ -37,7 +37,7 @@ const Index = () => {
 					</div>
 
 					<div className="flex-1 max-w-4xl mx-auto w-full">
-						<div className="h-[600px] md:h-[700px]">
+						<div className="h-[500px] md:h-[600px] lg:h-[700px]">
 							<BaymaxChat
 								className="h-full animate-message-in"
 								style={{ animationDelay: "0.2s" }}
@@ -46,7 +46,7 @@ const Index = () => {
 					</div>
 
 					<div
-						className="text-center mt-8 text-sm text-muted-foreground animate-message-in"
+						className="text-center mt-4 md:mt-8 text-xs md:text-sm text-muted-foreground animate-message-in px-4"
 						style={{ animationDelay: "0.4s" }}
 					>
 						<p className="opacity-75">
