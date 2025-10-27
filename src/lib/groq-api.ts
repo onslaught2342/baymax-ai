@@ -1,4 +1,4 @@
-let BAYMAX_ENDPOINT: string = "workers.dev/";
+let BAYMAX_ENDPOINT: string = "";
 
 const globalValue =
 	(typeof globalThis !== "undefined" &&
@@ -18,7 +18,7 @@ if (typeof globalValue === "string") {
 ) {
 	BAYMAX_ENDPOINT = import.meta.env.VITE_BAYMAX_ENDPOINT;
 } else {
-	BAYMAX_ENDPOINT = "https://baymax-proxy.onslaught2342.workers.dev/";
+	BAYMAX_ENDPOINT = "0.0.0.0";
 }
 
 interface WorkerChoice {
