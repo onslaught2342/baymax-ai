@@ -141,23 +141,22 @@ export function getMockBaymaxResponse(message: string): string {
 	return general[Math.floor(Math.random() * general.length)];
 }
 export async function clearBaymaxSession(sessionId: string): Promise<boolean> {
+	const endpoint = `${BAYMAX_ENDPOINT.replace(/\/$/, "")}/clear`; // removes trailing slash if present
+
 	try {
-		const res = await fetch(
-			"https://baymax-proxy.onslaught2342.workers.dev/clear",
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					sessionId,
-				}),
-			}
-		);
+		const res = await fetch(endpoint, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ sessionId }),
+		});
+
 		if (!res.ok) {
 			console.error("Failed to clear session:", res.status);
 			return false;
 		}
+
 		const data = await res.json();
 		return data.success === true;
 	} catch (err) {
