@@ -5,9 +5,7 @@ import { cn } from "@/lib/utils";
 
 const ThemeToggle: React.FC = () => {
 	const [isDark, setIsDark] = useState(false);
-
 	useEffect(() => {
-		// Default to dark mode
 		const savedTheme = localStorage.getItem("theme");
 
 		if (savedTheme === "light") {

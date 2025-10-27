@@ -20,8 +20,8 @@ export default function MatrixBackground() {
 
 		const chars = "01".split("");
 		const fontSize = 14;
-		let columns = Math.floor(canvas.width / fontSize);
-		let drops = Array.from({ length: columns }, () => 1);
+		const columns = Math.floor(canvas.width / fontSize);
+		const drops = Array.from({ length: columns }, () => 1);
 
 		const draw = () => {
 			ctx.fillStyle = "rgba(15, 23, 42, 0.05)";

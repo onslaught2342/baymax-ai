@@ -5,14 +5,10 @@ import MatrixBackground from "@/components/MatrixBackground";
 const Index = () => {
 	return (
 		<div className="min-h-screen bg-background relative overflow-hidden">
-			{/* Matrix Rain Background */}
 			<MatrixBackground />
-
-			{/* Theme toggle */}
 			<div className="absolute top-6 right-6 z-50">
 				<ThemeToggle />
 			</div>
-
 			<div className="relative z-10 p-3 md:p-4 lg:p-8 min-h-screen flex flex-col bg-background/80 backdrop-blur-sm">
 				<div className="max-w-4xl mx-auto flex-1 flex flex-col w-full">
 					<div className="text-center mb-4 md:mb-8 animate-message-in">

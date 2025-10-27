@@ -36,7 +36,6 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	};
@@ -44,10 +43,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 	useEffect(() => {
 		scrollToBottom();
 	}, [messages]);
-
-	// Simulate API call with a delay for realistic experience
 	const simulateGroqAPI = async (message: string): Promise<string> => {
-		// Add a realistic delay
 		await new Promise((resolve) =>
 			setTimeout(resolve, 1000 + Math.random() * 2000)
 		);
@@ -56,10 +52,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 
 	const sendMessage = async () => {
 		if (!inputValue.trim() || isLoading) return;
-
 		const trimmedInput = inputValue.trim();
-
-		// Check for clear command
 		if (trimmedInput.toLowerCase() === "clear") {
 			setInputValue("");
 			setIsLoading(true);
@@ -68,7 +61,6 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 				const sessionId = getSessionId();
 				const success = await clearBaymaxSession(sessionId);
 
-				// Reset messages to initial state
 				setMessages([
 					{
 						id: "1",
@@ -99,8 +91,6 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 		setIsLoading(true);
 
 		try {
-			// Using mock API for now - replace with real server-side API call
-			// For production, create an API route that calls Groq securely
 			const response = await simulateGroqAPI(userMessage.content);
 
 			const botMessage: Message = {
@@ -165,7 +155,6 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 				</div>
 			</div>
 
-			{/* Messages */}
 			<div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-4 bg-gradient-to-b from-transparent to-background/20">
 				{messages.map((message, index) => (
 					<div
@@ -238,7 +227,6 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 					</div>
 				))}
 
-				{/* Typing indicator */}
 				{isLoading && (
 					<div className="flex gap-2 md:gap-3 animate-message-in">
 						<div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-1 animate-pulse-glow">
@@ -267,8 +255,6 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 
 				<div ref={messagesEndRef} />
 			</div>
-
-			{/* Input */}
 			<div className="p-3 md:p-6 bg-card/20 border-t border-border/50 backdrop-blur-xl relative">
 				<div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent" />
 				<div className="relative flex gap-2 md:gap-3 items-end">

@@ -1,22 +1,39 @@
-// Baymax proxy integration (calls your Cloudflare Worker)
+let BAYMAX_ENDPOINT: string = "workers.dev/";
 
-// NOTE: Adjust the endpoint if you're using a custom domain or different path.
-const BAYMAX_ENDPOINT = "https://baymax-proxy.onslaught2342.workers.dev/";
+const globalValue =
+	(typeof globalThis !== "undefined" &&
+		(globalThis as unknown as Record<string, unknown>)["BAYMAX_ENDPOINT"]) ||
+	undefined;
+
+if (typeof globalValue === "string") {
+	BAYMAX_ENDPOINT = globalValue;
+} else if (
+	typeof process !== "undefined" &&
+	process.env?.VITE_BAYMAX_ENDPOINT
+) {
+	BAYMAX_ENDPOINT = process.env.VITE_BAYMAX_ENDPOINT;
+} else if (
+	typeof import.meta !== "undefined" &&
+	import.meta.env?.VITE_BAYMAX_ENDPOINT
+) {
+	BAYMAX_ENDPOINT = import.meta.env.VITE_BAYMAX_ENDPOINT;
+} else {
+	BAYMAX_ENDPOINT = "https://baymax-proxy.onslaught2342.workers.dev/";
+}
 
 interface WorkerChoice {
-	message?: { content?: string };
+	message?: {
+		content?: string;
+	};
 	text?: string;
 	[k: string]: unknown;
 }
-
 interface WorkerResponseShape {
 	reply?: string;
 	choices?: WorkerChoice[];
 	[k: string]: unknown;
 }
-
 function generateUUIDFallback(): string {
-	// fallback generator if crypto.randomUUID isn't available
 	const arr = new Uint8Array(16);
 	crypto.getRandomValues(arr);
 	arr[6] = (arr[6] & 0x0f) | 0x40;
@@ -42,26 +59,23 @@ export function getSessionId(): string {
 		}
 		return id;
 	} catch {
-		// worst-case fallback to a short random string (shouldn't happen in normal browsers)
 		return "s_" + Math.random().toString(36).slice(2, 10);
 	}
 }
-
 export async function sendMessageToBaymax(message: string): Promise<string> {
 	const payload = {
 		sessionId: getSessionId(),
 		userMessage: message,
 	};
-
 	try {
 		const res = await fetch(BAYMAX_ENDPOINT, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: {
+				"Content-Type": "application/json",
+			},
 			body: JSON.stringify(payload),
 		});
-
 		if (!res.ok) {
-			// try to read json error body
 			const text = await res.text();
 			let parsed;
 			try {
@@ -71,7 +85,6 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			}
 			throw new Error(`Worker error ${res.status}: ${JSON.stringify(parsed)}`);
 		}
-
 		const contentType = res.headers.get("Content-Type") || "";
 		let data: WorkerResponseShape;
 		if (contentType.includes("application/json")) {
@@ -81,32 +94,24 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			try {
 				data = JSON.parse(text);
 			} catch {
-				// fallback to raw text as reply
 				return text;
 			}
 		}
-
 		const reply =
 			data?.reply ??
 			data?.choices?.[0]?.message?.content ??
 			(typeof data?.choices?.[0]?.text === "string"
 				? data.choices[0].text
 				: null);
-
 		if (reply) return reply;
-
-		// Fallback: a local mock if upstream returns nothing
 		return getMockBaymaxResponse(message);
 	} catch (err) {
 		console.error("Error calling Baymax proxy:", err);
 		throw err;
 	}
 }
-
-// --- keep your mock fallback (useful for dev) ---
 export function getMockBaymaxResponse(message: string): string {
 	const lowerMessage = message.toLowerCase();
-
 	if (/(pain|hurt|ache)/.test(lowerMessage)) {
 		return "I understand you are experiencing discomfort. On a scale of 1 to 10, how would you rate your pain?";
 	}
@@ -128,7 +133,6 @@ export function getMockBaymaxResponse(message: string): string {
 	if (/(thank you|thanks)/.test(lowerMessage)) {
 		return "You’re welcome — happy to help!";
 	}
-
 	const general = [
 		"Tell me more about what you are feeling so I can help better.",
 		"Please describe your symptoms in a few words (duration, intensity).",
@@ -136,7 +140,6 @@ export function getMockBaymaxResponse(message: string): string {
 	];
 	return general[Math.floor(Math.random() * general.length)];
 }
-
 export async function clearBaymaxSession(sessionId: string): Promise<boolean> {
 	try {
 		const res = await fetch(
@@ -146,15 +149,15 @@ export async function clearBaymaxSession(sessionId: string): Promise<boolean> {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ sessionId }),
+				body: JSON.stringify({
+					sessionId,
+				}),
 			}
 		);
-
 		if (!res.ok) {
 			console.error("Failed to clear session:", res.status);
 			return false;
 		}
-
 		const data = await res.json();
 		return data.success === true;
 	} catch (err) {
