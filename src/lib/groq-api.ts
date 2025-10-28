@@ -196,8 +196,6 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			(typeof data?.choices?.[0]?.text === "string"
 				? data.choices[0].text
 				: null);
-
-		return reply ?? getMockBaymaxResponse(message);
 	} catch (err) {
 		console.error("Error calling Baymax proxy:", err);
 		throw err;
