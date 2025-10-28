@@ -68,11 +68,10 @@ export async function signup(
 	username: string,
 	password: string
 ): Promise<string> {
-	const passwordHash = await hashPassword(password);
 	const res = await fetch(`${BAYMAX_ENDPOINT}/signup`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ username, passwordHash }),
+		body: JSON.stringify({ username, password }), // send raw password
 	});
 	if (!res.ok) throw new Error(`Signup failed: ${await res.text()}`);
 	const data = await res.json();
@@ -84,11 +83,10 @@ export async function login(
 	username: string,
 	password: string
 ): Promise<string> {
-	const passwordHash = await hashPassword(password);
 	const res = await fetch(`${BAYMAX_ENDPOINT}/login`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ username, passwordHash }),
+		body: JSON.stringify({ username, password }), // send raw password
 	});
 	if (!res.ok) throw new Error(`Login failed: ${await res.text()}`);
 	const data = await res.json();
@@ -99,7 +97,6 @@ export async function login(
 export function getToken(): string | null {
 	return localStorage.getItem("baymax_token");
 }
-
 // ------------------------
 // Baymax Chat
 // ------------------------
