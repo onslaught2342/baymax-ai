@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import BaymaxChat from "@/components/BaymaxChat";
 import ThemeToggle from "@/components/ThemeToggle";
 import MatrixBackground from "@/components/MatrixBackground";
-import AuthPage from "@/components/AuthPage"; // your auth page component
-import { getToken } from "@/lib/baymaxApi"; // your auth helpers
+import AuthPage from "./AuthPage";
+import { getToken } from "@/lib/groq-api";
 
 const Index = () => {
 	const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
