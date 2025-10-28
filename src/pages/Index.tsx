@@ -1,8 +1,34 @@
+import { useState, useEffect } from "react";
 import BaymaxChat from "@/components/BaymaxChat";
 import ThemeToggle from "@/components/ThemeToggle";
 import MatrixBackground from "@/components/MatrixBackground";
+import AuthPage from "@/components/AuthPage"; // your auth page component
+import { getToken } from "@/lib/baymaxApi"; // your auth helpers
 
 const Index = () => {
+	const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+
+	useEffect(() => {
+		// check if user has a valid token
+		const token = getToken();
+		setLoggedIn(!!token);
+	}, []);
+
+	if (loggedIn === null) {
+		// while checking
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<p>Loading...</p>
+			</div>
+		);
+	}
+
+	// If not logged in, show AuthPage
+	if (!loggedIn) {
+		return <AuthPage onLogin={() => setLoggedIn(true)} />;
+	}
+
+	// Otherwise, show the Baymax chat
 	return (
 		<div className="min-h-screen bg-background relative overflow-hidden">
 			<MatrixBackground />

@@ -52,13 +52,57 @@ export function getSessionId(): string {
 	}
 }
 
-async function fetchToken(sessionId: string): Promise<string> {
-	const res = await fetch(`${BAYMAX_ENDPOINT}/token?sessionId=${sessionId}`);
-	if (!res.ok) throw new Error("Failed to get token");
-	const data: { token: string } = await res.json();
+async function hashPassword(password: string): Promise<string> {
+	const encoder = new TextEncoder();
+	const data = encoder.encode(password);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+	return Array.from(new Uint8Array(hashBuffer))
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+}
+
+// ------------------------
+// Auth Functions
+// ------------------------
+export async function signup(
+	username: string,
+	password: string
+): Promise<string> {
+	const passwordHash = await hashPassword(password);
+	const res = await fetch(`${BAYMAX_ENDPOINT}/signup`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ username, passwordHash }),
+	});
+	if (!res.ok) throw new Error(`Signup failed: ${await res.text()}`);
+	const data = await res.json();
+	localStorage.setItem("baymax_token", data.token);
 	return data.token;
 }
 
+export async function login(
+	username: string,
+	password: string
+): Promise<string> {
+	const passwordHash = await hashPassword(password);
+	const res = await fetch(`${BAYMAX_ENDPOINT}/login`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ username, passwordHash }),
+	});
+	if (!res.ok) throw new Error(`Login failed: ${await res.text()}`);
+	const data = await res.json();
+	localStorage.setItem("baymax_token", data.token);
+	return data.token;
+}
+
+export function getToken(): string | null {
+	return localStorage.getItem("baymax_token");
+}
+
+// ------------------------
+// Baymax Chat
+// ------------------------
 interface WorkerChoice {
 	message?: { content?: string };
 	text?: string;
@@ -68,12 +112,14 @@ interface WorkerChoice {
 interface WorkerResponseShape {
 	reply?: string;
 	choices?: WorkerChoice[];
+	refreshToken?: string;
 	[k: string]: unknown;
 }
 
 export async function sendMessageToBaymax(message: string): Promise<string> {
 	const sessionId = getSessionId();
-	let token = await fetchToken(sessionId);
+	const token = getToken();
+	if (!token) throw new Error("User not logged in");
 
 	const payload = { sessionId, userMessage: message };
 
@@ -111,10 +157,9 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			}
 		}
 
-		const responseData = data as WorkerResponseShape & {
-			refreshToken?: string;
-		};
-		if (responseData.refreshToken) token = responseData.refreshToken;
+		// Refresh token if returned
+		if (data.refreshToken)
+			localStorage.setItem("baymax_token", data.refreshToken);
 
 		const reply =
 			data?.reply ??
@@ -130,8 +175,12 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 	}
 }
 
+// ------------------------
+// Session Clear
+// ------------------------
 export async function clearBaymaxSession(sessionId: string): Promise<boolean> {
-	let token = await fetchToken(sessionId);
+	const token = getToken();
+	if (!token) throw new Error("User not logged in");
 	const endpoint = `${BAYMAX_ENDPOINT.replace(/\/$/, "")}/clear`;
 
 	try {
@@ -144,22 +193,22 @@ export async function clearBaymaxSession(sessionId: string): Promise<boolean> {
 			body: JSON.stringify({ sessionId }),
 		});
 
-		if (!res.ok) {
-			console.error("Failed to clear session:", res.status);
-			return false;
-		}
+		if (!res.ok) return false;
 
 		const data = await res.json();
-		const responseData = data as { success?: boolean; refreshToken?: string };
-		if (responseData.refreshToken) token = responseData.refreshToken;
+		if (data.refreshToken)
+			localStorage.setItem("baymax_token", data.refreshToken);
 
-		return responseData.success === true;
+		return data.success === true;
 	} catch (err) {
 		console.error("Clear session error:", err);
 		return false;
 	}
 }
 
+// ------------------------
+// Mock Responses
+// ------------------------
 export function getMockBaymaxResponse(message: string): string {
 	const lowerMessage = message.toLowerCase();
 	if (/(pain|hurt|ache)/.test(lowerMessage))
