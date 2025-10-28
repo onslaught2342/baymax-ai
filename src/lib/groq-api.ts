@@ -64,6 +64,8 @@ async function hashPassword(password: string): Promise<string> {
 // ------------------------
 // Auth Functions
 // ------------------------
+const TOKEN_EXPIRY_DAYS = 7;
+
 export async function signup(
 	username: string,
 	password: string
@@ -71,11 +73,17 @@ export async function signup(
 	const res = await fetch(`${BAYMAX_ENDPOINT}/signup`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ username, password }), // send raw password
+		body: JSON.stringify({ username, password }),
 	});
 	if (!res.ok) throw new Error(`Signup failed: ${await res.text()}`);
 	const data = await res.json();
-	localStorage.setItem("baymax_token", data.token);
+
+	const tokenData = {
+		token: data.token,
+		createdAt: Date.now(), // store creation timestamp
+	};
+
+	localStorage.setItem("baymax_token", JSON.stringify(tokenData));
 	return data.token;
 }
 
@@ -86,16 +94,40 @@ export async function login(
 	const res = await fetch(`${BAYMAX_ENDPOINT}/login`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ username, password }), // send raw password
+		body: JSON.stringify({ username, password }),
 	});
 	if (!res.ok) throw new Error(`Login failed: ${await res.text()}`);
 	const data = await res.json();
-	localStorage.setItem("baymax_token", data.token);
+
+	const tokenData = {
+		token: data.token,
+		createdAt: Date.now(),
+	};
+
+	localStorage.setItem("baymax_token", JSON.stringify(tokenData));
 	return data.token;
 }
 
 export function getToken(): string | null {
-	return localStorage.getItem("baymax_token");
+	const item = localStorage.getItem("baymax_token");
+	if (!item) return null;
+
+	try {
+		const tokenData = JSON.parse(item) as { token: string; createdAt: number };
+		const age = Date.now() - tokenData.createdAt;
+		const maxAge = TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000; // 7 days in ms
+
+		if (age > maxAge) {
+			localStorage.removeItem("baymax_token");
+			window.location.reload(); // refresh page if token expired
+			return null;
+		}
+
+		return tokenData.token;
+	} catch {
+		localStorage.removeItem("baymax_token"); // corrupted data
+		return null;
+	}
 }
 // ------------------------
 // Baymax Chat
