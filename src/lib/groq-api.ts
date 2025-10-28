@@ -164,7 +164,6 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 		});
 
 		if (!res.ok) {
-			// Try to extract details from worker error
 			const text = await res.text();
 			let parsed: any;
 			try {
@@ -175,9 +174,9 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			throw new Error(`Worker error ${res.status}: ${JSON.stringify(parsed)}`);
 		}
 
-		// Parse JSON or fallback to text
 		const contentType = res.headers.get("Content-Type") || "";
 		let data: any;
+
 		if (contentType.includes("application/json")) {
 			data = await res.json();
 		} else {
@@ -185,7 +184,7 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			try {
 				data = JSON.parse(text);
 			} catch {
-				// plain text reply
+				// If we only get plain text, return it
 				return text || getMockBaymaxResponse(message);
 			}
 		}
@@ -195,25 +194,22 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			localStorage.setItem("baymax_token", data.refreshToken);
 		}
 
-		// Extract the reply safely from multiple possible formats
+		// Extract reply based on your Worker structure
 		const reply =
-			data?.reply ??
-			data?.choices?.[0]?.message?.content ??
-			(typeof data?.choices?.[0]?.text === "string"
-				? data.choices[0].text
-				: null);
+			data?.output?.refined ??
+			data?.output?.raw ??
+			data?.output?.choices?.[0]?.message?.content ??
+			data?.output?.choices?.[0]?.text ??
+			null;
 
-		// If no reply but no error either — treat as incomplete but successful response
 		if (!reply) {
 			console.warn("Baymax worker returned no reply:", data);
 			return "Baymax is thinking... but didn’t respond clearly.";
 		}
 
-		// ✅ Only return mock when network or parse errors happen — not here
-		return reply;
+		return reply.trim();
 	} catch (err) {
 		console.error("Error calling Baymax proxy:", err);
-		// Return mock response *only* on genuine failure
 		return getMockBaymaxResponse(message);
 	}
 }
