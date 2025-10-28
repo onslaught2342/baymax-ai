@@ -148,6 +148,7 @@ interface WorkerResponseShape {
 export async function sendMessageToBaymax(message: string): Promise<string> {
 	const sessionId = getSessionId();
 	const token = getToken();
+
 	if (!token) throw new Error("User not logged in");
 
 	const payload = { sessionId, userMessage: message };
@@ -163,8 +164,9 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 		});
 
 		if (!res.ok) {
+			// Try to extract details from worker error
 			const text = await res.text();
-			let parsed;
+			let parsed: any;
 			try {
 				parsed = JSON.parse(text);
 			} catch {
@@ -173,8 +175,9 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			throw new Error(`Worker error ${res.status}: ${JSON.stringify(parsed)}`);
 		}
 
+		// Parse JSON or fallback to text
 		const contentType = res.headers.get("Content-Type") || "";
-		let data: WorkerResponseShape;
+		let data: any;
 		if (contentType.includes("application/json")) {
 			data = await res.json();
 		} else {
@@ -182,23 +185,36 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			try {
 				data = JSON.parse(text);
 			} catch {
-				return text;
+				// plain text reply
+				return text || getMockBaymaxResponse(message);
 			}
 		}
 
-		// Refresh token if returned
-		if (data.refreshToken)
+		// Refresh token if present
+		if (data?.refreshToken) {
 			localStorage.setItem("baymax_token", data.refreshToken);
+		}
 
+		// Extract the reply safely from multiple possible formats
 		const reply =
 			data?.reply ??
 			data?.choices?.[0]?.message?.content ??
 			(typeof data?.choices?.[0]?.text === "string"
 				? data.choices[0].text
 				: null);
+
+		// If no reply but no error either — treat as incomplete but successful response
+		if (!reply) {
+			console.warn("Baymax worker returned no reply:", data);
+			return "Baymax is thinking... but didn’t respond clearly.";
+		}
+
+		// ✅ Only return mock when network or parse errors happen — not here
+		return reply;
 	} catch (err) {
 		console.error("Error calling Baymax proxy:", err);
-		throw err;
+		// Return mock response *only* on genuine failure
+		return getMockBaymaxResponse(message);
 	}
 }
 
