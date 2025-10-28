@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, LogOut } from "lucide-react"; // 🧩 import logout icon
+import { Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
 	sendMessageToBaymax,
@@ -10,11 +10,6 @@ import {
 } from "@/lib/groq-api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
-const logout = () => {
-	localStorage.removeItem("baymax_token");
-	window.location.reload(); // Refresh the page
-};
 
 interface Message {
 	id: string;
@@ -137,22 +132,8 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 			)}
 			style={style}
 		>
-			<div className="flex items-center justify-between p-3 md:p-6 bg-card/30 border-b border-border/50 backdrop-blur-sm relative">
-				{/* Background gradient */}
+			<div className="flex items-center gap-2 md:gap-3 p-3 md:p-6 bg-card/30 border-b border-border/50 backdrop-blur-sm relative">
 				<div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary-glow/5" />
-
-				{/* Logout button (top-left) */}
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={logout}
-					className="relative z-10 text-muted-foreground hover:text-red-500 transition"
-					title="Logout"
-				>
-					<LogOut className="w-5 h-5" />
-				</Button>
-
-				{/* Baymax header content */}
 				<div className="relative flex items-center gap-2 md:gap-3">
 					<div className="relative">
 						<img

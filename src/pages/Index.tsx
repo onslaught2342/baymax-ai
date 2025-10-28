@@ -4,18 +4,24 @@ import ThemeToggle from "@/components/ThemeToggle";
 import MatrixBackground from "@/components/MatrixBackground";
 import AuthPage from "./AuthPage";
 import { getToken } from "@/lib/groq-api";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 const Index = () => {
 	const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
 
 	useEffect(() => {
-		// check if user has a valid token
 		const token = getToken();
 		setLoggedIn(!!token);
 	}, []);
 
+	// Logout function
+	const handleLogout = () => {
+		localStorage.removeItem("baymax_token");
+		window.location.reload();
+	};
+
 	if (loggedIn === null) {
-		// while checking
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<p>Loading...</p>
@@ -23,18 +29,34 @@ const Index = () => {
 		);
 	}
 
-	// If not logged in, show AuthPage
 	if (!loggedIn) {
 		return <AuthPage onLogin={() => setLoggedIn(true)} />;
 	}
 
-	// Otherwise, show the Baymax chat
+	// 🧠 When logged in, show BaymaxChat + Logout + ThemeToggle
 	return (
 		<div className="min-h-screen bg-background relative overflow-hidden">
 			<MatrixBackground />
+
+			{/* 🔘 Logout (top-left) */}
+			<div className="absolute top-6 left-6 z-50">
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={handleLogout}
+					className="text-muted-foreground hover:text-red-500 transition"
+					title="Logout"
+				>
+					<LogOut className="w-5 h-5" />
+				</Button>
+			</div>
+
+			{/* 🌙 Theme Toggle (top-right) */}
 			<div className="absolute top-6 right-6 z-50">
 				<ThemeToggle />
 			</div>
+
+			{/* 💬 Main content */}
 			<div className="relative z-10 p-3 md:p-4 lg:p-8 min-h-screen flex flex-col bg-background/80 backdrop-blur-sm">
 				<div className="max-w-4xl mx-auto flex-1 flex flex-col w-full">
 					<div className="text-center mb-4 md:mb-8 animate-message-in">
