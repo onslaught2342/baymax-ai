@@ -1,5 +1,5 @@
 let BAYMAX_ENDPOINT: string = "";
-
+const STORAGE_KEY = "baymax_chat_history";
 const globalValue =
 	(typeof globalThis !== "undefined" &&
 		(globalThis as unknown as Record<string, unknown>)["BAYMAX_ENDPOINT"]) ||
@@ -60,6 +60,36 @@ async function hashPassword(password: string): Promise<string> {
 		.map((b) => b.toString(16).padStart(2, "0"))
 		.join("");
 }
+export async function fetchUserHistory(): Promise<any[]> {
+	const token = getToken();
+	if (!token) throw new Error("User not logged in");
+
+	const endpoint = `${BAYMAX_ENDPOINT.replace(/\/$/, "")}/history`;
+
+	const res = await fetch(endpoint, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
+	});
+
+	if (!res.ok) {
+		const text = await res.text();
+		throw new Error(`Failed to fetch history: ${text}`);
+	}
+
+	const data = await res.json();
+
+	// Always store latest history in localStorage
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+	} catch (err) {
+		console.warn("Failed to store history in localStorage:", err);
+	}
+
+	return data;
+}
 
 // ------------------------
 // Auth Functions
@@ -80,7 +110,7 @@ export async function signup(
 
 	const tokenData = {
 		token: data.token,
-		createdAt: Date.now(), // store creation timestamp
+		createdAt: Date.now(),
 	};
 
 	localStorage.setItem("baymax_token", JSON.stringify(tokenData));
@@ -90,12 +120,13 @@ export async function signup(
 export async function login(
 	username: string,
 	password: string
-): Promise<string> {
+): Promise<{ token: string; history: any[] }> {
 	const res = await fetch(`${BAYMAX_ENDPOINT}/login`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ username, password }),
 	});
+
 	if (!res.ok) throw new Error(`Login failed: ${await res.text()}`);
 	const data = await res.json();
 
@@ -105,7 +136,14 @@ export async function login(
 	};
 
 	localStorage.setItem("baymax_token", JSON.stringify(tokenData));
-	return data.token;
+
+	// Immediately fetch user history after login
+	const history = await fetchUserHistory().catch((err) => {
+		console.warn("History fetch after login failed:", err);
+		return [];
+	});
+
+	return { token: data.token, history };
 }
 
 export function getToken(): string | null {
@@ -129,9 +167,6 @@ export function getToken(): string | null {
 		return null;
 	}
 }
-// ------------------------
-// Baymax Chat
-// ------------------------
 interface WorkerChoice {
 	message?: { content?: string };
 	text?: string;
@@ -184,17 +219,12 @@ export async function sendMessageToBaymax(message: string): Promise<string> {
 			try {
 				data = JSON.parse(text);
 			} catch {
-				// If we only get plain text, return it
 				return text || getMockBaymaxResponse(message);
 			}
 		}
-
-		// Refresh token if present
 		if (data?.refreshToken) {
 			localStorage.setItem("baymax_token", data.refreshToken);
 		}
-
-		// Extract reply based on your Worker structure
 		const reply =
 			data?.output?.refined ??
 			data?.output?.raw ??
