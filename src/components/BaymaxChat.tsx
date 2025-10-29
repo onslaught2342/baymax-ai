@@ -25,6 +25,16 @@ interface BaymaxChatProps {
 
 const STORAGE_KEY = "baymax_chat_history";
 
+// 🧹 Clean and format AI responses for Markdown
+function formatResponse(text: string): string {
+	return text
+		.replace(/\r\n/g, "\n") // normalize newlines
+		.replace(/\\n/g, "\n") // convert escaped newlines from storage
+		.replace(/\n{3,}/g, "\n\n") // collapse extra blank lines
+		.replace(/\*+\s*(.*?)\s*\*+/g, "_$1_") // italicize *text*
+		.trim();
+}
+
 const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 	const [messages, setMessages] = useState<Message[]>(() => {
 		try {
@@ -119,7 +129,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 			const response = await simulateGroqAPI(userMessage.content);
 			const botMessage: Message = {
 				id: (Date.now() + 1).toString(),
-				content: response,
+				content: formatResponse(response),
 				sender: "bot",
 				timestamp: new Date(),
 			};
@@ -215,6 +225,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 							>
 								{message.content}
 							</ReactMarkdown>
+
 							<p
 								className={cn(
 									"text-[10px] md:text-xs mt-2 md:mt-3 opacity-60 font-medium",
