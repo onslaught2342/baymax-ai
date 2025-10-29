@@ -60,58 +60,69 @@ async function hashPassword(password: string): Promise<string> {
 		.map((b) => b.toString(16).padStart(2, "0"))
 		.join("");
 }
-export async function fetchUserHistory(): Promise<any[]> {
+
+export async function fetchUserHistory(): Promise<
+	{ role: string; content: string }[]
+> {
 	const token = getToken();
 	if (!token) throw new Error("User not logged in");
 
 	const endpoint = `${BAYMAX_ENDPOINT.replace(/\/$/, "")}/history`;
 
-	const res = await fetch(endpoint, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${token}`,
-		},
-	});
-
-	if (!res.ok) {
-		const text = await res.text();
-		throw new Error(`Failed to fetch history: ${text}`);
-	}
-
-	let data = await res.json();
-
-	// --- FORMATTER ---
-	const formatResponse = (text: string): string => {
-		return text
-			.replace(/\*+\s*(.*?)\s*\*+/g, "_$1_") // convert *text* to italics
-			.replace(/(?:\r\n|\r|\n){3,}/g, "\n\n") // collapse excessive newlines
-			.replace(
-				/\b(diagnostic scan|warning lights|treatment plan|prevention tips|medical consultation)\b/gi,
-				"**$1**"
-			) // emphasize medical terms
-			.trim();
-	};
-
-	// --- APPLY FORMATTING TO ALL MESSAGES ---
-	if (Array.isArray(data)) {
-		data = data.map((msg) => ({
-			...msg,
-			content:
-				typeof msg.content === "string"
-					? formatResponse(msg.content)
-					: msg.content,
-		}));
-	}
-
-	// --- STORE IN LOCALSTORAGE ---
 	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-	} catch (err) {
-		console.warn("Failed to store history in localStorage:", err);
-	}
+		const res = await fetch(endpoint, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+		});
 
-	return data;
+		if (!res.ok) {
+			const text = await res.text();
+			throw new Error(`Failed to fetch history: ${text}`);
+		}
+
+		let data = await res.json();
+
+		// --- Normalize to BaymaxChat format ---
+		// Example conversion if backend returns [{ prompt, response }]
+		const normalized = Array.isArray(data)
+			? data.flatMap((item: any) => [
+					{
+						role: "user",
+						content: item.prompt || item.user || item.input || "",
+					},
+					{
+						role: "assistant",
+						content: item.response || item.bot || item.output || "",
+					},
+			  ])
+			: [];
+
+		// --- Store in localStorage ---
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+		} catch (err) {
+			console.warn("Failed to store history in localStorage:", err);
+		}
+
+		return normalized;
+	} catch (error) {
+		console.error("Error fetching history:", error);
+
+		// Try fallback from cache if available
+		const cached = localStorage.getItem(STORAGE_KEY);
+		if (cached) {
+			try {
+				return JSON.parse(cached);
+			} catch {
+				return [];
+			}
+		}
+
+		return [];
+	}
 }
 
 // ------------------------
