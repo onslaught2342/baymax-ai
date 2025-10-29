@@ -26,32 +26,32 @@ interface BaymaxChatProps {
 const STORAGE_KEY = "baymax_messages"; // LOCALSTORAGE
 
 const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
-	const [messages, setMessages] = useState<Message[]>(() => {
-		// --- LOCALSTORAGE: Load saved messages on startup ---
+	const [messages, setMessages] = useState<Message[]>([
+		{
+			id: "1",
+			content:
+				"Hello! I am Baymax, your personal healthcare companion. How can I help you today?",
+			sender: "bot",
+			timestamp: new Date(),
+		},
+	]);
+
+	// ✅ Load from localStorage after first render (client-side only)
+	useEffect(() => {
 		try {
 			const saved = localStorage.getItem(STORAGE_KEY);
 			if (saved) {
 				const parsed = JSON.parse(saved);
-				// Convert timestamp back to Date
-				return parsed.map((msg: any) => ({
+				const restored = parsed.map((msg: any) => ({
 					...msg,
 					timestamp: new Date(msg.timestamp),
 				}));
+				setMessages(restored);
 			}
 		} catch (err) {
 			console.warn("Failed to load chat history:", err);
 		}
-		// Default welcome message
-		return [
-			{
-				id: "1",
-				content:
-					"Hello! I am Baymax, your personal healthcare companion. How can I help you today?",
-				sender: "bot",
-				timestamp: new Date(),
-			},
-		];
-	});
+	}, []);
 
 	const [inputValue, setInputValue] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
