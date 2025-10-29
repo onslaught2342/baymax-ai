@@ -79,9 +79,32 @@ export async function fetchUserHistory(): Promise<any[]> {
 		throw new Error(`Failed to fetch history: ${text}`);
 	}
 
-	const data = await res.json();
+	let data = await res.json();
 
-	// Always store latest history in localStorage
+	// --- FORMATTER ---
+	const formatResponse = (text: string): string => {
+		return text
+			.replace(/\*+\s*(.*?)\s*\*+/g, "_$1_") // convert *text* to italics
+			.replace(/(?:\r\n|\r|\n){3,}/g, "\n\n") // collapse excessive newlines
+			.replace(
+				/\b(diagnostic scan|warning lights|treatment plan|prevention tips|medical consultation)\b/gi,
+				"**$1**"
+			) // emphasize medical terms
+			.trim();
+	};
+
+	// --- APPLY FORMATTING TO ALL MESSAGES ---
+	if (Array.isArray(data)) {
+		data = data.map((msg) => ({
+			...msg,
+			content:
+				typeof msg.content === "string"
+					? formatResponse(msg.content)
+					: msg.content,
+		}));
+	}
+
+	// --- STORE IN LOCALSTORAGE ---
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 	} catch (err) {

@@ -25,29 +25,19 @@ interface BaymaxChatProps {
 
 const STORAGE_KEY = "baymax_chat_history";
 
-// 🧹 Clean and format AI responses for Markdown
-function formatResponse(text: string): string {
-	return text
-		.replace(/\r\n/g, "\n") // normalize newlines
-		.replace(/\\n/g, "\n") // convert escaped newlines from storage
-		.replace(/\n{3,}/g, "\n\n") // collapse extra blank lines
-		.replace(/\*+\s*(.*?)\s*\*+/g, "_$1_") // italicize *text*
-		.trim();
-}
-
 const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 	const [messages, setMessages] = useState<Message[]>(() => {
 		try {
-			const saved = localStorage.getItem(STORAGE_KEY);
-			if (saved) {
-				const parsed = JSON.parse(saved);
+			const stored = localStorage.getItem(STORAGE_KEY);
+			if (stored) {
+				const parsed = JSON.parse(stored);
 				return parsed.map((msg: any) => ({
 					...msg,
 					timestamp: new Date(msg.timestamp),
 				}));
 			}
 		} catch (err) {
-			console.warn("Error loading chat history:", err);
+			console.warn("Failed to load chat history:", err);
 		}
 		return [
 			{
@@ -72,11 +62,12 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 		scrollToBottom();
 	}, [messages]);
 
+	// 💾 Save chat history to localStorage whenever it changes
 	useEffect(() => {
 		try {
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
 		} catch (err) {
-			console.warn("Error saving chat history:", err);
+			console.warn("Failed to save chat history:", err);
 		}
 	}, [messages]);
 
@@ -91,17 +82,20 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 		if (!inputValue.trim() || isLoading) return;
 		const trimmedInput = inputValue.trim();
 
+		// 🧹 Handle "clear" command
 		if (trimmedInput.toLowerCase() === "clear") {
 			setInputValue("");
 			setIsLoading(true);
 			try {
 				const sessionId = getSessionId();
-				await clearBaymaxSession(sessionId);
+				const success = await clearBaymaxSession(sessionId);
 				localStorage.removeItem(STORAGE_KEY);
 				setMessages([
 					{
 						id: "1",
-						content: "Chat history cleared. How can I help you today?",
+						content: success
+							? "Chat history cleared. How can I help you today?"
+							: "Chat cleared locally. How can I help you today?",
 						sender: "bot",
 						timestamp: new Date(),
 					},
@@ -129,23 +123,21 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 			const response = await simulateGroqAPI(userMessage.content);
 			const botMessage: Message = {
 				id: (Date.now() + 1).toString(),
-				content: formatResponse(response),
+				content: response,
 				sender: "bot",
 				timestamp: new Date(),
 			};
 			setMessages((prev) => [...prev, botMessage]);
 		} catch (error) {
 			console.error("Error sending message:", error);
-			setMessages((prev) => [
-				...prev,
-				{
-					id: (Date.now() + 1).toString(),
-					content:
-						"I apologize, but I'm having trouble processing your request right now. Please try again later.",
-					sender: "bot",
-					timestamp: new Date(),
-				},
-			]);
+			const errorMessage: Message = {
+				id: (Date.now() + 1).toString(),
+				content:
+					"I apologize, but I'm having trouble processing your request right now. Please try again later.",
+				sender: "bot",
+				timestamp: new Date(),
+			};
+			setMessages((prev) => [...prev, errorMessage]);
 		} finally {
 			setIsLoading(false);
 		}
@@ -179,6 +171,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 						/>
 						<div className="absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full border-2 border-card animate-gentle-bounce" />
 					</div>
+
 					<div>
 						<h2 className="text-lg md:text-xl font-semibold text-foreground">
 							Baymax
@@ -190,7 +183,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 				</div>
 			</div>
 
-			{/* Chat Messages */}
+			{/* Messages */}
 			<div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-4 bg-gradient-to-b from-transparent to-background/20">
 				{messages.map((message, index) => (
 					<div
@@ -219,12 +212,23 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 									: "bg-chat-bot/80 text-chat-bot-foreground border border-border/30 rounded-bl-md"
 							)}
 						>
-							<ReactMarkdown
-								className="prose prose-sm max-w-none prose-invert"
-								remarkPlugins={[remarkGfm]}
+							<div
+								className={cn(
+									"prose prose-sm max-w-none prose-invert",
+									message.sender === "user"
+										? "prose-headings:text-chat-user-foreground prose-p:text-chat-user-foreground prose-strong:text-chat-user-foreground prose-li:text-chat-user-foreground"
+										: "prose-headings:text-chat-bot-foreground prose-p:text-chat-bot-foreground prose-strong:text-chat-bot-foreground prose-li:text-chat-bot-foreground",
+									"prose-headings:text-sm md:prose-headings:text-base prose-headings:font-semibold prose-headings:mb-1 md:prose-headings:mb-2 prose-headings:mt-2 md:prose-headings:mt-4 first:prose-headings:mt-0",
+									"prose-p:my-1 md:prose-p:my-2 prose-p:leading-relaxed prose-p:text-sm md:prose-p:text-base",
+									"prose-ul:my-1 md:prose-ul:my-2 prose-ol:my-1 md:prose-ol:my-2 prose-li:my-0.5 md:prose-li:my-1 prose-li:text-sm md:prose-li:text-base",
+									"prose-strong:font-semibold prose-strong:text-sm md:prose-strong:text-base",
+									"break-words"
+								)}
 							>
-								{message.content}
-							</ReactMarkdown>
+								<ReactMarkdown remarkPlugins={[remarkGfm]}>
+									{message.content}
+								</ReactMarkdown>
+							</div>
 
 							<p
 								className={cn(
@@ -252,7 +256,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 					</div>
 				))}
 
-				{/* Loading dots */}
+				{/* Loading indicator */}
 				{isLoading && (
 					<div className="flex gap-2 md:gap-3 animate-message-in">
 						<div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-1 animate-pulse-glow">
@@ -265,13 +269,13 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 						</div>
 						<div className="bg-chat-bot/80 border border-border/30 rounded-xl md:rounded-2xl rounded-bl-md px-3 py-3 md:px-5 md:py-4 shadow-message backdrop-blur-sm">
 							<div className="flex gap-1 md:gap-1.5">
-								<div className="w-2 h-2 bg-muted-foreground rounded-full animate-typing" />
+								<div className="w-2 h-2 md:w-2.5 md:h-2.5 bg-muted-foreground rounded-full animate-typing" />
 								<div
-									className="w-2 h-2 bg-muted-foreground rounded-full animate-typing"
+									className="w-2 h-2 md:w-2.5 md:h-2.5 bg-muted-foreground rounded-full animate-typing"
 									style={{ animationDelay: "0.2s" }}
 								/>
 								<div
-									className="w-2 h-2 bg-muted-foreground rounded-full animate-typing"
+									className="w-2 h-2 md:w-2.5 md:h-2.5 bg-muted-foreground rounded-full animate-typing"
 									style={{ animationDelay: "0.4s" }}
 								/>
 							</div>
@@ -282,7 +286,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 				<div ref={messagesEndRef} />
 			</div>
 
-			{/* Input Area */}
+			{/* Input */}
 			<div className="p-3 md:p-6 bg-card/20 border-t border-border/50 backdrop-blur-xl relative">
 				<div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent" />
 				<div className="relative flex gap-2 md:gap-3 items-end">
