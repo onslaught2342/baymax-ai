@@ -25,12 +25,14 @@ export default function MatrixBackground() {
 		};
 
 		resizeCanvas();
+
 		window.addEventListener("resize", resizeCanvas);
 
 		const draw = () => {
-			ctx.fillStyle = "rgba(15, 23, 42, 0.05)"; // background fade
+			ctx.fillStyle = "rgba(15, 23, 42, 0.05)";
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
-			ctx.fillStyle = "#0f0"; // matrix green
+
+			ctx.fillStyle = "#0f0";
 			ctx.font = fontSize + "px monospace";
 
 			for (let i = 0; i < drops.length; i++) {
