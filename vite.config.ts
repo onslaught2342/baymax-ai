@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import viteCompression from "vite-plugin-compression";
+import vitePluginSRI from "vite-plugin-sri";
 
 export default defineConfig(({ mode }) => {
 	const isDev = mode === "development";
@@ -23,6 +24,13 @@ export default defineConfig(({ mode }) => {
 
 		plugins: [
 			react(),
+
+			// Add Subresource Integrity for production
+			isProd &&
+				vitePluginSRI({
+					algorithm: "sha384", // You can also use 'sha256' or 'sha512'
+				}),
+
 			isProd &&
 				viteCompression({
 					algorithm: "brotliCompress",
@@ -31,6 +39,7 @@ export default defineConfig(({ mode }) => {
 					threshold: 4096,
 					compressionOptions: { level: 11 },
 				}),
+
 			isProd &&
 				viteCompression({
 					algorithm: "gzip",
