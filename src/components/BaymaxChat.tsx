@@ -176,7 +176,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 				<div className="relative flex items-center gap-2 md:gap-3">
 					<div className="relative">
 						<img
-							src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png"
+							src="https://cdn.onslaught2342.qzz.io/assets/images/logos/Baymax.png"
 							alt="Baymax"
 							className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover animate-pulse-glow"
 						/>
@@ -207,7 +207,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 					>
 						{message.sender === "bot" && (
 							<img
-								src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png"
+								src="https://cdn.onslaught2342.qzz.io/assets/images/logos/Baymax.png"
 								alt="Baymax"
 								className="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-float"
 								loading="lazy"
@@ -253,7 +253,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 
 						{message.sender === "user" && (
 							<img
-								src="https://cdn.onslaught2342.qzz.io/assets/Images/logo.png"
+								src="https://cdn.onslaught2342.qzz.io/assets/images/logos/logo.png"
 								alt="User"
 								className="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-float"
 								loading="lazy"
@@ -266,7 +266,7 @@ const BaymaxChat: React.FC<BaymaxChatProps> = ({ className, style }) => {
 					<div className="flex gap-2 md:gap-3 animate-message-in">
 						<div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-1 animate-pulse-glow">
 							<img
-								src="https://cdn.onslaught2342.qzz.io/assets/Images/Baymax.png"
+								src="https://cdn.onslaught2342.qzz.io/assets/images/logos/Baymax.png"
 								alt="Baymax"
 								className="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover flex-shrink-0 mt-1 animate-pulse-glow"
 								loading="lazy"
